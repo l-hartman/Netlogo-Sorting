@@ -11,13 +11,14 @@ to setup
   clear-all
   make-blocks
   display-big-o
+
 end
 
-to sortBlocks
+to sort-blocks
   if algorithm = "bubble sort"    [ bubble-sort-big-o    ]
   if algorithm = "merge sort"     [ merge-sort-big-o     ]
   if algorithm = "selection sort" [ selection-sort-big-o selection-sort ]
-  if algorithm = "insertion sort" [ insertion-sort-big-o ]
+  if algorithm = "insertion sort" [ insertion-sort-big-o insertion-sort ]
 end
 
 
@@ -77,7 +78,6 @@ to selection-sort
 
 
     ; inner loop
-   ; repeat array:length block-heights - 1[
     while [ j < 65 ] [
       tick
       print ticks
@@ -108,7 +108,30 @@ end
 
 
 to insertion-sort
+  reset-ticks
+  let i 1
+  let j 0
+  let k 0
+  let l 0
+  let temp 0
 
+  while [ i < array:length block-heights ] [
+    tick
+    set j i - 1
+    set k array:item block-heights i
+
+    while [( j >= 0 ) and ( k < array:item block-heights j ) ] [
+      tick
+      set l j + 1
+      set temp array:item block-heights j
+      array:set block-heights j (array:item block-heights l)
+      array:set block-heights (l) (temp)
+      set j j - 1
+      re-draw-blocks
+    ]
+    set i i + 1
+  ]
+  print block-heights
 end
 
 to swap-test
@@ -117,6 +140,14 @@ to swap-test
   array:set block-heights 0 temp
   print block-heights
   print array:length block-heights - 5
+end
+
+to insert-test
+  let i 1
+  let j i - 1
+  print block-heights
+  array:set block-heights j (array:item block-heights i)
+  print block-heights
 end
 
 to display-big-o
@@ -204,29 +235,29 @@ NIL
 1
 
 CHOOSER
-12
-176
-185
-221
+17
+110
+194
+156
 algorithm
 algorithm
 "bubble sort" "merge sort" "selection sort" "insertion sort" "quick sort"
 3
 
 OUTPUT
-6
-316
-306
-440
+12
+196
+323
+332
 12
 
 BUTTON
-85
-73
-172
-106
+82
+75
+193
+108
 NIL
-sortBlocks
+sort-blocks
 NIL
 1
 T
@@ -238,66 +269,15 @@ NIL
 1
 
 MONITOR
-1262
-10
-1343
-55
+220
+92
+301
+137
 comparisons
 ticks
 17
 1
 11
-
-BUTTON
-216
-94
-311
-127
-NIL
-bubble-sort
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-250
-161
-356
-194
-NIL
-selection-sort
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-134
-30
-221
-63
-NIL
-swap-test
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -641,7 +621,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
