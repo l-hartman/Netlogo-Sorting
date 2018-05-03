@@ -7,16 +7,17 @@ blocks-own [ height x-position]
 
 globals [ block-heights ]
 
+
 to setup
   clear-all
   make-blocks
   display-big-o
-
 end
 
+
 to sort-blocks
-  if algorithm = "bubble sort"    [ bubble-sort-big-o    ]
-  if algorithm = "merge sort"     [ merge-sort-big-o     ]
+  if algorithm = "bubble sort"    [ bubble-sort-big-o bubble-sort       ]
+  if algorithm = "merge sort"     [ merge-sort-big-o                    ]
   if algorithm = "selection sort" [ selection-sort-big-o selection-sort ]
   if algorithm = "insertion sort" [ insertion-sort-big-o insertion-sort ]
 end
@@ -25,23 +26,36 @@ end
 to make-blocks
   let i 65
   let j 0
+
+  ; create 65 blocks
   repeat i [
     create-blocks 1
     [
       set shape "line half"
-      __set-line-thickness 0.5
+      __set-line-thickness .9
       set heading 0
-      set size 1 + random 100
+      set size who + 1
       setxy j 0                  ; x-cordinates are 0-64
-      set height size            ; size is a random positive number < 80
+      set height size            ; 0 < size < 65
       set x-position xcor
       set color cyan
       set j j + 1
     ]
   ]
+  ; initialize block-heights array
   setup-array
+  ; shuffle block-heights array
+  shuffle-blocks
 end
 
+
+; shuffles block-heights array
+to shuffle-blocks
+  if shuffle-choice = "random" [ random-shuffle ]
+  if shuffle-choice = "descending order" [ descending-order-shuffle ]
+end
+
+; creates block-heights array
 to setup-array
   set block-heights array:from-list n-values 65 [0]
   let i 0
@@ -49,62 +63,131 @@ to setup-array
     array:set block-heights i ([height] of block i)
     set i i + 1
   ]
-  print block-heights
 end
+
+
+; random-shuffle randomly shuffles block-heights array
+to random-shuffle
+  ; copy block-heights into a list
+  let height-list array:to-list block-heights
+
+  ; use NetLogo's built in shuffle reporter to randomize the array
+  let shuffle-list shuffle height-list
+
+  ; copy the shuffled list into block-heights
+  set block-heights array:from-list shuffle-list
+  draw-blocks
+end
+
+
+to descending-order-shuffle
+    ; copy block-heights into a list
+  let height-list array:to-list block-heights
+
+  ; use NetLogo's built in reverse reporter to reverse list
+  let descending-list reverse height-list
+
+  ; copy list into block-heights array
+  set block-heights array:from-list descending-list
+  draw-blocks
+end
+
 
 to bubble-sort
+  reset-ticks
+  repeat 64 [
+    let i 0
+    let j 0
+    let k 0
+    while [i < 65][
 
+      while [j < 64 ]  [
+        tick
+        set k j + 1
+        if array:item block-heights j > array:item block-heights k[
+          let temp array:item block-heights j
+          array:set block-heights j array:item block-heights k
+          array:set block-heights k temp
+          draw-blocks
+        ]
+        set j j + 1
+      ]
+      set i i + 1
+    ]
+  ]
 end
-
 
 
 to selection-sort
-
   reset-ticks
 
   let i 0     ; outer-loop counter
   let j 0     ; inner-loop counter
   let temp 0  ; for storing temporary values during swap
+
   let smallest-height 0
   let smallest-height-index 0
 
-  ; array:length block-heights - 1 = 64 = Number of Blocks
-  ; repeat array:length block-heights - 1 [
-  while [ i < 65 ] [
+  ; outer loop
+  while [ i < array:length block-heights ] [
+
+    ; setting j = i pushes the inner loop forward 1 with each outer loop iteration
     set j i
+
+    ; blocks before index i are already sorted
     set smallest-height array:item block-heights i
     set smallest-height-index i;
     tick
 
 
     ; inner loop
-    while [ j < 65 ] [
+    while [ j < array:length block-heights ] [
+
+      ; if (block-heights[j] < currently-known smallest height)
+      ;    set smallest-height = block-heights[j]
+      ;    set smallest-height-index = j
       tick
-      print ticks
       if array:item block-heights j < smallest-height [
         set smallest-height array:item block-heights j
         set smallest-height-index j
       ]
+      ; increment j
       set j j + 1
     ]
+
     if smallest-height < array:item block-heights i [
+
+      ; red blocks are to be swapped with pink blocks
+      ask blocks with [ height = smallest-height ] [ set color red ]
+      ask blocks with [ height = array:item block-heights i ] [ set color pink ]
+      draw-blocks
+
+      ; perform swap
       set temp array:item block-heights i
       array:set block-heights i array:item block-heights smallest-height-index
       array:set block-heights smallest-height-index temp
-      re-draw-blocks
+
+
+      ask blocks with [ height = smallest-height ] [ set color red ]
+      ask blocks with [ height = array:item block-heights i ] [ set color pink ]
+      draw-blocks
     ]
+
+    ; change the color of the sorted blocks to green, unsorted blocks to cyan
+    ask blocks with [ height = smallest-height ] [ set color green ]
+    ask blocks with [ height > smallest-height ] [ set color cyan ]
+
+    ; increment i
     set i i + 1
   ]
- print block-heights
 end
 
-to re-draw-blocks
+to draw-blocks
   ask blocks [
     set height array:item block-heights who
     set size array:item block-heights who
   ]
 end
-
 
 
 to insertion-sort
@@ -124,31 +207,29 @@ to insertion-sort
       tick
       set l j + 1
       set temp array:item block-heights j
+
+      ; green blocks are in sorted order
+      ask blocks with [ height = array:item block-heights j ] [ set color green ]
+
+      ; swap block-heights[j] with block-heights[j]
       array:set block-heights j (array:item block-heights l)
       array:set block-heights (l) (temp)
       set j j - 1
-      re-draw-blocks
+      draw-blocks
     ]
     set i i + 1
   ]
   print block-heights
+
+  ; set last block green
+  ask blocks with [ height = 65 ] [ set color green ]
+
 end
 
-to swap-test
-  let temp array:item block-heights 1
-  array:set block-heights 1 array:item block-heights 0
-  array:set block-heights 0 temp
-  print block-heights
-  print array:length block-heights - 5
+to heap-sort
+
 end
 
-to insert-test
-  let i 1
-  let j i - 1
-  print block-heights
-  array:set block-heights j (array:item block-heights i)
-  print block-heights
-end
 
 to display-big-o
   if algorithm = "bubble sort"    [ bubble-sort-big-o    ]
@@ -181,7 +262,6 @@ to merge-sort-big-o
   output-print "Best Case: O(n*log(n))"
 end
 
-
 to selection-sort-big-o
   output-print "Now Sorting with selection sort"
   output-print "_______________________________\n"
@@ -191,10 +271,10 @@ to selection-sort-big-o
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-353
-10
-1160
-818
+204
+218
+1011
+632
 -1
 -1
 12.3
@@ -210,7 +290,7 @@ GRAPHICS-WINDOW
 0
 64
 0
-64
+32
 0
 0
 1
@@ -218,10 +298,10 @@ ticks
 30.0
 
 BUTTON
-15
-74
-78
-107
+3
+357
+66
+390
 NIL
 setup
 NIL
@@ -235,27 +315,27 @@ NIL
 1
 
 CHOOSER
-17
-110
-194
-156
+5
+393
+182
+438
 algorithm
 algorithm
 "bubble sort" "merge sort" "selection sort" "insertion sort" "quick sort"
-3
+0
 
 OUTPUT
-12
-196
-323
-332
+701
+84
+1012
+220
 12
 
 BUTTON
-82
-75
-193
-108
+70
+358
+181
+391
 NIL
 sort-blocks
 NIL
@@ -269,15 +349,25 @@ NIL
 1
 
 MONITOR
-220
-92
-301
-137
+205
+171
+286
+216
 comparisons
 ticks
 17
 1
 11
+
+CHOOSER
+6
+441
+182
+486
+shuffle-choice
+shuffle-choice
+"random" "descending order" "almost sorted"
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -621,7 +711,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
