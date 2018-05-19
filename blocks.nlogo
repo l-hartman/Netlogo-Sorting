@@ -2,10 +2,10 @@
 
 extensions [ array ]
 
-breed [ blocks block ]
+breed      [ blocks block     ]
 blocks-own [ height x-position]
 
-globals [ block-heights ]
+globals [ block-heights array-length ]
 
 
 to setup
@@ -16,10 +16,11 @@ end
 
 
 to sort-blocks
-  if algorithm = "bubble sort"    [ bubble-sort-big-o bubble-sort       ]
-  if algorithm = "merge sort"     [ merge-sort-big-o                    ]
-  if algorithm = "selection sort" [ selection-sort-big-o selection-sort ]
-  if algorithm = "insertion sort" [ insertion-sort-big-o insertion-sort ]
+  reset-ticks
+  if algorithm = "bubble sort"    [ bubble-sort-big-o bubble-sort                    ]
+  if algorithm = "merge sort"     [ merge-sort-big-o merge-sort 0 array-length - 1   ]
+  if algorithm = "selection sort" [ selection-sort-big-o selection-sort              ]
+  if algorithm = "insertion sort" [ insertion-sort-big-o insertion-sort              ]
 end
 
 
@@ -49,9 +50,17 @@ to make-blocks
 end
 
 
+to draw-blocks
+  ask blocks [
+    set height array:item block-heights who
+    set size array:item block-heights who
+  ]
+end
+
+
 ; shuffles block-heights array
 to shuffle-blocks
-  if shuffle-choice = "random" [ random-shuffle ]
+  if shuffle-choice = "random"           [ random-shuffle           ]
   if shuffle-choice = "descending order" [ descending-order-shuffle ]
 end
 
@@ -63,6 +72,7 @@ to setup-array
     array:set block-heights i ([height] of block i)
     set i i + 1
   ]
+  set array-length array:length block-heights
 end
 
 
@@ -81,7 +91,7 @@ end
 
 
 to descending-order-shuffle
-    ; copy block-heights into a list
+  ; copy block-heights into a list
   let height-list array:to-list block-heights
 
   ; use NetLogo's built in reverse reporter to reverse list
@@ -95,13 +105,13 @@ end
 
 to bubble-sort
   reset-ticks
-  repeat 64 [
     let i 0
     let j 0
     let k 0
     while [i < 65][
-
       while [j < 64 ]  [
+        print "innerloop"
+       ; ask blocks [ set color cyan ]
         tick
         set k j + 1
         if array:item block-heights j > array:item block-heights k[
@@ -112,8 +122,61 @@ to bubble-sort
         ]
         set j j + 1
       ]
+      set j 0
+      ask blocks with [ height = array:item block-heights 64 - i  ] [ set color green ]
       set i i + 1
     ]
+
+end
+
+
+
+to merge-sort[ start ending ]
+  let middle 0
+  if start < ending [
+    set middle int((start + ending) / 2)
+    merge-sort int start int middle
+    merge-sort  (middle + 1) ending
+    merge start middle ending
+  ]
+end
+
+to merge [start middle ending]
+  let i start
+  let j middle + 1
+  let k 0
+  let temp array:from-list n-values (ending - start + 1) [0]
+  while [ i <= middle and j <= ending][
+    tick
+    ifelse array:item block-heights i < array:item block-heights j[
+      array:set temp k array:item block-heights i
+      set k k + 1
+      set i i + 1
+    ][
+      array:set temp k array:item block-heights j
+      set k k + 1
+      set j j + 1
+    ]
+  ]
+
+  while [ i <= middle ][
+    array:set temp k array:item block-heights i
+      set k k + 1
+      set i i + 1
+    ]
+  while [ j <= ending ][
+    array:set temp k array:item block-heights j
+      set k k + 1
+      set j j + 1
+    ]
+  set i start
+  while [i <= ending][
+   array:set block-heights i array:item temp (i - start)
+    draw-blocks
+    if ending = 64 and start = 0[
+      ask block i [set color green]
+    ]
+    set i i + 1
   ]
 end
 
@@ -130,33 +193,27 @@ to selection-sort
 
   ; outer loop
   while [ i < array:length block-heights ] [
-
     ; setting j = i pushes the inner loop forward 1 with each outer loop iteration
     set j i
 
     ; blocks before index i are already sorted
     set smallest-height array:item block-heights i
     set smallest-height-index i;
-    tick
-
 
     ; inner loop
     while [ j < array:length block-heights ] [
-
+      tick
       ; if (block-heights[j] < currently-known smallest height)
       ;    set smallest-height = block-heights[j]
       ;    set smallest-height-index = j
-      tick
       if array:item block-heights j < smallest-height [
         set smallest-height array:item block-heights j
         set smallest-height-index j
       ]
-      ; increment j
       set j j + 1
     ]
-
+    tick
     if smallest-height < array:item block-heights i [
-
       ; red blocks are to be swapped with pink blocks
       ask blocks with [ height = smallest-height ] [ set color red ]
       ask blocks with [ height = array:item block-heights i ] [ set color pink ]
@@ -167,9 +224,6 @@ to selection-sort
       array:set block-heights i array:item block-heights smallest-height-index
       array:set block-heights smallest-height-index temp
 
-
-      ask blocks with [ height = smallest-height ] [ set color red ]
-      ask blocks with [ height = array:item block-heights i ] [ set color pink ]
       draw-blocks
     ]
 
@@ -177,18 +231,9 @@ to selection-sort
     ask blocks with [ height = smallest-height ] [ set color green ]
     ask blocks with [ height > smallest-height ] [ set color cyan ]
 
-    ; increment i
     set i i + 1
   ]
 end
-
-to draw-blocks
-  ask blocks [
-    set height array:item block-heights who
-    set size array:item block-heights who
-  ]
-end
-
 
 to insertion-sort
   reset-ticks
@@ -198,18 +243,22 @@ to insertion-sort
   let l 0
   let temp 0
 
+  ; outer loop
   while [ i < array:length block-heights ] [
     tick
     set j i - 1
     set k array:item block-heights i
 
+    ; inner loop
     while [( j >= 0 ) and ( k < array:item block-heights j ) ] [
       tick
-      set l j + 1
-      set temp array:item block-heights j
-
       ; green blocks are in sorted order
       ask blocks with [ height = array:item block-heights j ] [ set color green ]
+      ;set l equal to block index right of j
+      set l j + 1
+
+      ; store block-heights[j] into temp
+      set temp array:item block-heights j
 
       ; swap block-heights[j] with block-heights[j]
       array:set block-heights j (array:item block-heights l)
@@ -219,17 +268,11 @@ to insertion-sort
     ]
     set i i + 1
   ]
-  print block-heights
+
 
   ; set last block green
   ask blocks with [ height = 65 ] [ set color green ]
-
 end
-
-to heap-sort
-
-end
-
 
 to display-big-o
   if algorithm = "bubble sort"    [ bubble-sort-big-o    ]
@@ -251,7 +294,7 @@ to bubble-sort-big-o
   output-print "____________________________\n"
   output-print "Worst Case: O(n^2)\n"
   output-print "Average Case: O(n^2)\n"
-  output-print "Best Case: O(n)"
+  output-print "Best Case: O(n^2)"
 end
 
 to merge-sort-big-o
@@ -271,13 +314,13 @@ to selection-sort-big-o
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-204
-218
-1011
-632
+36
+163
+1315
+817
 -1
 -1
-12.3
+19.554
 1
 10
 1
@@ -295,13 +338,13 @@ GRAPHICS-WINDOW
 0
 1
 ticks
-30.0
+60.0
 
 BUTTON
-3
-357
-66
-390
+37
+125
+100
+158
 NIL
 setup
 NIL
@@ -315,27 +358,27 @@ NIL
 1
 
 CHOOSER
-5
-393
-182
-438
+37
+26
+214
+71
 algorithm
 algorithm
-"bubble sort" "merge sort" "selection sort" "insertion sort" "quick sort"
-0
+"bubble sort" "merge sort" "selection sort" "insertion sort"
+2
 
 OUTPUT
-701
-84
-1012
-220
+1021
+34
+1315
+159
 12
 
 BUTTON
-70
-358
-181
-391
+104
+126
+215
+159
 NIL
 sort-blocks
 NIL
@@ -349,10 +392,10 @@ NIL
 1
 
 MONITOR
-205
-171
-286
-216
+918
+114
+1010
+159
 comparisons
 ticks
 17
@@ -360,31 +403,40 @@ ticks
 11
 
 CHOOSER
-6
-441
-182
-486
+38
+74
+214
+119
 shuffle-choice
 shuffle-choice
-"random" "descending order" "almost sorted"
-1
+"random" "descending order"
+0
 
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+This model visualizes 4 different sorting algorithms, merge, sort, insertion and selection. It creates bars with different heights and sorts them with each sorting algorithm accordingly.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
+The modle creates random blocks with random heights. The user can decide how, using a chooser, they will appear, descending and random. The sortng algorithm used is also chose by the user by a chooser. Each sorting algorithm has its own properites. 
+
+Bubble sort
+	This algorithm compares the first block with the one next to it and if its larger it will swap it, and compare again with the next one. This continues until all block are in their right spot.
+
+Merge sort
+	This algoritm divides input array in two halves (the blocks), calls itself for the two halves and then merges the two sorted halves. This is a recursinve function. 
+
+Selectio Sort
+	The selection sort algorithm sorts an array by repeatedly finding the minimum element from unsorted part and putting it at the beginning. The algorithm maintains two subarrays in a given array. The subarray which is already sorted. Remaining subarray which is unsorted.
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+The user chooses the shuffle choice and the sorting algorithm, press the set up button, and press sort blocks. User can adjust speed accordingly.
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+Notice how each sorting algorithm sorts things at different speeds, making it clear which one is faster with the current settings.
 
 ## THINGS TO TRY
 
@@ -392,7 +444,7 @@ shuffle-choice
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Possible extensions would be to add more sorting algorithms. 
 
 ## NETLOGO FEATURES
 
@@ -711,7 +763,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
